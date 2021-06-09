@@ -5,14 +5,15 @@ import h5py
 import os
 from shutil import rmtree
 from os.path import isdir, isfile, join, basename
-import cPickle as pkl
+import pickle as pkl
 import sqlite3
 import joblib
 from collections import OrderedDict
 from copy import copy
 from matplotlib import pyplot as plt
 import webbrowser as wb
-import urllib2
+import urllib.request as urllib2
+import urllib.error as urlliberror
 
 
 class ICLabelDataset:
@@ -884,7 +885,7 @@ class ICLabelDataset:
             for column in f[var_name]:
                 row_data = []
                 for row_number in range(len(column)):
-                    row_data.append(''.join(map(unichr, f[column[row_number]][:])))
+                    row_data.append(''.join(map(chr, f[column[row_number]][:])))
                 var.append(row_data)
         return [str(x)[3:-2] for x in var]
 
@@ -940,7 +941,7 @@ class ICLabelDataset:
         processed_file_name += '.pkl'
 
         # load processed data file if it exists
-        if isfile(join(self.datapath, 'cache', processed_file_name)):
+        if isfile(self.datapath + '/cache/'+ processed_file_name):
             dataset = joblib.load(join(self.datapath, 'cache', processed_file_name))
 
         # if not, create it
@@ -952,7 +953,7 @@ class ICLabelDataset:
 
             self.check_for_download('train_features')
             # topo maps, old psd, dipole, and handcrafted
-            with h5py.File(join(self.datapath, 'features', 'features_0D1D2D.mat'), 'r') as f:
+            with h5py.File(self.datapath+'features'+'/features_0D1D2D.mat', 'r') as f:
                 print('Loading 0D1D2D features...')
                 features.append(np.asarray(f['features']).T)
                 feature_labels.append(self.__load_matlab_cellstr(f, 'labels'))
@@ -965,21 +966,21 @@ class ICLabelDataset:
                     # if no data, skip
                     if data.ndim == 1 or data.dtype != np.float64:
                         continue
-                    nyquist = (data.shape[1] - 2) / 3
+                    nyquist = int((data.shape[1] - 2) / 3)
                     nfreq = 100
                     # if more than nfreqs, remove extra
                     if nyquist > nfreq:
-                        data = data[:, np.concatenate((range(2 + nfreq),
-                                                      range(2 + nyquist, 2 + nyquist + nfreq),
-                                                      range(2 + 2*nyquist, 2 + 2*nyquist + nfreq)))]
+                        data = data[:, np.concatenate((range(int(2 + nfreq)),
+                                                      range(int(2 + nyquist), int(2 + nyquist + nfreq)),
+                                                      range(int(2 + 2*nyquist), int(2 + 2*nyquist + nfreq))))]
                     # if less than nfreqs, repeat last frequency value
                     elif nyquist < nfreq:
                         data = data[:, np.concatenate((range(2 + nyquist),
-                                                       np.repeat(1 + nyquist, nfreq - nyquist),
-                                                       range(2 + nyquist, 2 + 2*nyquist),
-                                                       np.repeat(1 + 2*nyquist, nfreq - nyquist),
-                                                       range(2 + 2*nyquist, 2 + 3*nyquist),
-                                                       np.repeat(1 + 3*nyquist, nfreq - nyquist))
+                                                       np.repeat(1 + nyquist, int(nfreq - nyquist)),
+                                                       range(int(2 + nyquist), int(2 + 2*nyquist)),
+                                                       np.repeat(int(1 + 2*nyquist), int(nfreq - nyquist)),
+                                                       range(int(2 + 2*nyquist), int(2 + 3*nyquist)),
+                                                       np.repeat(int(1 + 3*nyquist), int(nfreq - nyquist)))
                                                       ).astype(int)]
 
                     features[-1].append(data)
@@ -1537,10 +1538,10 @@ class ICLabelDataset:
                     local_file.write(chunk)
                 print('Done.')
 
-        except urllib2.HTTPError, e:
-            print "HTTP Error:", e.code, url
-        except urllib2.URLError, e:
-            print "URL Error:", e.reason, url
+        except urlliberror.HTTPError as e:
+            print("HTTP Error:", e.code, url)
+        except urlliberror.URLError as e:
+            print("URL Error:", e.reason, url)
 
     def download_trainset_cllabels(self):
         """
@@ -1845,7 +1846,7 @@ class ICLabelDataset:
                 data = data.T
                 nax = data.shape[0]
             if nax > self.max_grid_plot:
-                print 'Too many plots requested.'
+                print('Too many plots requested.')
                 return
 
             self._plot_grid(data, self.plot_topo)
@@ -1872,7 +1873,7 @@ class ICLabelDataset:
         else:
             nax = data.shape[0]
             if nax > self.max_grid_plot:
-                print 'Too many plots requested.'
+                print('Too many plots requested.')
                 return
 
             self._plot_grid(data, self.plot_psd)
@@ -1896,7 +1897,7 @@ class ICLabelDataset:
         else:
             nax = data.shape[0]
             if nax > self.max_grid_plot:
-                print 'Too many plots requested.'
+                print('Too many plots requested.')
                 return
 
             self._plot_grid(data, self.plot_autocorr)
