@@ -92,11 +92,11 @@ class Multiclass_GP():
 
     def predict(self, xstar, x = None, S=100):
         if self.f is None:
-            ValueError('Run inference before prediction')
+            raise ValueError('Run inference before prediction')
         
         if self.x is None and x is None:
-            ValueError('The training input must be given at', \
-                       'initialization of the class or when calling predict.')
+            raise ValueError('The training input must be given at', \
+                              'initialization of the class or when calling predict.')
 
         # Initial computations
         f_temp = np.array([self.f[c*self.n:(c+1)*self.n] for c in range(self.num_classes)]).T
@@ -104,11 +104,12 @@ class Multiclass_GP():
         pi = np.reshape(pi_temp,(self.num_classes*self.n),order= 'F')
         M_temp = np.zeros((self.n, self.n))
         E = np.zeros((self.num_classes*self.n,self.n))
+        n_test = len(xstar)
 
         if self.x is not None:
-            kstar = self.kernel(x, xstar)
-        else:
             kstar = self.kernel(self.x, xstar)
+        else:
+            kstar = self.kernel(x, xstar)
 
         for c in range(self.num_classes):
             pi_c = pi[c*self.n:(c+1)*self.n]
@@ -120,31 +121,34 @@ class Multiclass_GP():
             M_temp = M_temp + E[c*self.n:(c+1)*self.n,:]
         
         M = cholesky(M_temp, lower = True)
-        mu_star = np.zeros(len(xstar)*self.num_classes)
-        Sigma = np.zeros((self.num_classes, self.num_classes))
+        mu_star = np.zeros((len(xstar),self.num_classes))
+        Sigma = np.zeros((n_test, self.num_classes, self.num_classes))
         kstarstar = self.kernel(xstar)
 
+        # Infer mean and covariance for all test data points
         for c in range(self.num_classes):
-            pi_c = pi[c*self.n:(c+1)*self.n]
-            y_c = self.y[c*self.n:(c+1)*self.n]
+            pi_c = pi[c*self.n:(c+1)*self.n, np.newaxis]
+            y_c = self.y[c*self.n:(c+1)*self.n, np.newaxis]
             kstar_c = kstar[c*self.n:(c+1)*self.n]
-            mu_star_c = np.sum((y_c-pi_c)*kstar_c)
-            mu_star[c] = mu_star_c
+            mu_star_c = np.sum((y_c-pi_c)*kstar_c, axis = 0)
+            mu_star[:,c] = mu_star_c
             E_c = E[c*self.n:(c+1)*self.n,:]
             b = np.dot(E_c, kstar_c)
             c_def = np.dot(E_c, cho_solve((M, True), b))
 
             for c_mark in range(self.num_classes):
-                Sigma[c,c_mark] = np.sum(c_def*kstar[c_mark*self.n:(c_mark+1)*self.n])
+                Sigma[:,c,c_mark] = np.sum(c_def*kstar[c_mark*self.n:(c_mark+1)*self.n], axis = 0)
             
-            k_starstar_c = kstarstar[c]
-            Sigma[c,c] = Sigma[c,c] + k_starstar_c - np.sum(b*kstar_c)
+            k_starstar_c = kstarstar[c,:]
+            Sigma[:,c,c] = Sigma[:,c,c] + k_starstar_c - np.sum(b*kstar_c, axis = 0)
 
-        pistar = np.zeros((self.num_classes))
+        #MC sampling
+        pistar = np.zeros((n_test, self.num_classes))
 
         for i in range(S):
-            fstar = np.random.multivariate_normal(mu_star, Sigma)
-            pistar = pistar + np.exp(fstar)/np.sum(np.exp(fstar))
+            for n in range(n_test):
+                fstar = np.random.multivariate_normal(mu_star[n,:], Sigma[n,:,:])
+                pistar[n,:] = pistar[n,:] + np.exp(fstar)/np.sum(np.exp(fstar))
         
         pistar = pistar / S
 

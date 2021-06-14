@@ -3,7 +3,7 @@ from fastdtw import fastdtw
 from scipy.spatial.distance import euclidean
 
 class AGDTW():
-    def __init__(self, sigma):
+    def __init__(self, sigma, **kwargs):
         self.sigma = sigma
     
     def __call__(self, x, xstar = None):
@@ -36,8 +36,8 @@ class AGDTW():
         return K
 
 
-class SquaredExponentialKernel:
-    def __init__(self, l, sigmaf):
+class SquaredExponentialKernel():
+    def __init__(self, l, sigmaf, **kwargs):
         self.l = l
         self.sigmaf = sigmaf
         
@@ -59,3 +59,36 @@ class SquaredExponentialKernel:
                 K[:,i] = self.sigmaf**2*np.exp(-dist/(2*(self.l**2)))
             
         return K
+
+class MultiClassKernel():
+    '''
+    Wrapper for turning standard kernels into multiclass kernels
+    '''
+    def __init__(self, num_classes, params, base_kernel):
+        self.num_classes = num_classes
+        self.params = params
+        self.base_kernel = base_kernel
+
+        if not (len(self.params) == 1 or len(self.params) == self.num_classes):
+            raise ValueError('The number of sets of parameters must be either 1',\
+                             'or equal to the number of classes.')
+    
+    def __call__(self, x, xstar = None):
+
+        if len(self.params) == 1: # use the same kernel for all classes
+            kernel = self.base_kernel(*self.params[0])
+            K_temp = kernel(x = x, xstar = xstar)
+            K = K_temp
+            for c in range(self.num_classes-1):
+                K = np.concatenate((K, K_temp), axis = 0)
+        elif len(self.params) == self.num_classes:
+            kernel = self.base_kernel(*self.params[0])
+            K = kernel(x,xstar)
+            for c in range(1, self.num_classes):
+                kernel = self.base_kernel(*self.params[c])
+                K_temp = kernel(x,xstar)
+                K = np.concatenate((K, K_temp), axis = 0)
+
+        return K
+
+
