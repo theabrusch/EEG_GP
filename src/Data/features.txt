@@ -1,0 +1,89 @@
+Spatial features:
+------------------------------------------------------------
+(SAD) Spatial average difference (Mognon et al., 2010). 
+This feature is defined as the absolute value of the mean of 
+frontal electrode activations minus the absolute value of 
+the mean of posterior electrode activations. The frontal area 
+is defined to be the electrodes with absolute angles less 
+than 60° and radii larger than 0.4. The posterior area 
+consists of the electrodes with absolute angles larger than 
+110°.
+
+(centralActivation) Logarithm of mean of absolute values of
+activations of central electrodes of IC (Winkler et al., 2011).
+
+(central) Thesefeatures give the absolute values of the mean 
+activations of electrodes in various areas of the scalp. Each 
+area is defined as the mean over all electrodes, where the 
+contribution from each electrode to the mean is weighted by a 
+Gaussian bell. For the areas around the eyes (lefteye and 
+righteye), the standard deviation of the Gaussian bell is 1 
+cm. For all other areas, it is 2 cm. A 9-cm radius of the scalp 
+is assumed. The Gaussian bells are centered at the locations of 
+Fp1, Fp2, AFz, Cz, POz, C5, and C4, respectively.
+
+(zcoord) X,Y,and Z coordinates of dipole fit.
+
+(SED) Spatial eye difference (Mognon et al., 2010). Absolute 
+value of the difference between activation of electrodes around 
+the left and right eye areas. The left eye area is defined to 
+lie between the angles −61° and −35° with a radius larger than 
+0.3 (where the head radius is assumed to be one, the convention 
+in EEGLAB). The right eye area is defined to lie between the 
+angles 34° and 61°, also at a radius larger than 0.3. Zero 
+degrees is towards the nose and positive 90° is at the right 
+ear.
+
+(logRangeSpatial) Logarithm of range of activation of 
+electrodes. This was one of the six final features included in 
+the classifier described in Winkler et al., 2011.
+
+(spatDistExtrema) Euclidean distance in 3D coordinates between
+the two electrodes with minimal and maximal activation.
+
+(cdn) Current density norm (Winkler et al., 2011). The current 
+density norm is a measure of the complexity of the current 
+source distribution of an IC. A high complexity of the current 
+source distribution indicates that the source of the IC is 
+difficult to locate inside the brain, and thus that it is likely 
+to be an artifact. This was one of the six final features 
+included in the classifier described in Winkler and colleagues 
+(2011), in which a more detailed description can be found.
+
+(dipoleResidualVariance) Residual variance of dipole fit.
+
+Temporal features
+--------------------------------------------------------------
+(logRangeTemporalVar) The range (maximum value minus minimum 
+value) was calculated for 1-s intervals. The feature 
+logRangeTemporalVar is the variance.
+
+(var1sAvg) Again, the variance is found in 1-s intervals of 
+the time series. The features var1sAvg and var1sVar are the 
+average and variance over these intervals, respectively. 
+This was also used in Winkler et al. (2011).
+
+(timeEntropyAvg) In each 1-s interval, the entropy was found. 
+The average over these intervals is timeEntropyAvg and the 
+variance is timeEntropyVar. This was also used in Winkler et 
+al. (2011).
+
+Spectral features
+--------------------------------------------------------------
+(theta) Mean over 1-s intervals of the logarithm of band power 
+in the θ (4–7 Hz).
+The average band power in the α-band was one of the six final 
+features included in the classifier described in 
+(Winkler et al., 2011).
+
+(lowFrequentPowerAvg) This features give the band power in the 
+δ band (1–3 Hz) relative to the total power in the time series. 
+The spectrogram used for these features is calculated based on 
+the downsampled but unfiltered time series since the filter 
+removes frequencies lower than 3 Hz. The spectrogram is 
+calculated over 1-s intervals, and the power in the δ band 
+divided by the power over all frequencies is then found. The 
+feature lowFrequentPowerAvg is the mean over the 1-s intervals 
+of this ratio.
+
+
