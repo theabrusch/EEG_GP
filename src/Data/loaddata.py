@@ -43,7 +43,3 @@ def loademotiondata(subj_path):
     data['ics'] = np.matmul(data['icaweights'], data['data'])
 
     return data
-
-
-data = loademotiondata('SCCN_data/emotion/ab75')
-s
