@@ -31,6 +31,9 @@ class Multiclass_GP():
         converged = False
         while not converged and i < maxiter:
             i+=1
+            if i == 3:
+                print('iter', 3)
+            print('Iteration',i)
             pi_temp = np.exp(f_temp)/np.sum(np.exp(f_temp), axis = 1)[:,np.newaxis] # eq 3.34
             pi = np.reshape(pi_temp,(self.num_classes*self.n),order= 'F')
 
@@ -71,9 +74,18 @@ class Multiclass_GP():
             
             # Approximate marginal log likelihood
             f_temp = np.array([f[c*self.n:(c+1)*self.n] for c in range(self.num_classes)]).T
-            lml = -1/2*np.sum(a*f) + np.sum(self.y*f) + \
+            lml = -1/2*np.sum(a*f) + np.sum(self.y*f) - \
                 np.sum(np.log(np.sum(np.exp(f_temp), axis = 1))) - \
                 np.sum(z) # eq 3.44
+
+            ls_iter = 0
+            while lml < log_marginal_likelihood and ls_iter < 5:
+                ls_iter += 1
+                f = 0.5*f
+                f_temp = np.array([f[c*self.n:(c+1)*self.n] for c in range(self.num_classes)]).T
+                lml = -1/2*np.sum(a*f) + np.sum(self.y*f) - \
+                        np.sum(np.log(np.sum(np.exp(f_temp), axis = 1))) - \
+                        np.sum(z)
             
             if abs(lml-log_marginal_likelihood)<tol:
                 converged = True
