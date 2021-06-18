@@ -1,8 +1,9 @@
 from datetime import time
+from os import stat_result
 import numpy as np
 import pandas as pd
 import mne
-from scipy.stats import entropy¶
+from scipy.stats import entropy, gaussian_kde
 
 
 def temporalfeatures(data):
@@ -13,19 +14,25 @@ def temporalfeatures(data):
     features = pd.DataFrame()
     ics = data['ics']
     nsegs = int(ics.shape[1]/200)
-    logRange = np.zeros(nsegs)
-    var1sAvg = np.zeros(nsegs)
-    timeEntropy = np.zeros(nsegs)
+    logRange = np.zeros((nsegs, ics.shape[0]))
+    var1sAvg = np.zeros((nsegs, ics.shape[0]))
+    timeEntropy = np.zeros((nsegs, ics.shape[0]))
 
     for i in range(nsegs):
         seg = ics[:,i*200:(i+1)*200]
         logRange[i] = np.log(np.max(seg, axis = 1) - np.min(seg, axis = 1))
         var1sAvg[i] = np.var(seg)
-        timeEntropy[i] = entropy(seg, axis = 1)
+        for ic in range(seg.shape[0]):
+            kde = gaussian_kde(seg[i,:])
+            dist = kde(seg[i,:])
+            timeEntropy[i, ic] = entropy(dist)
 
-    features['logRangeTemporalVar'] = np.var(np.log(logRange), axis = 0)
+    features['logRangeTemporalVar'] = np.var(logRange, axis = 0)
     features['var1sAvg'] = np.mean(var1sAvg, axis = 0)
     features['timeEntropyAvg'] = np.mean(timeEntropy, axis = 0)
 
     return features
 
+
+def spatialfeatures(data):
+    

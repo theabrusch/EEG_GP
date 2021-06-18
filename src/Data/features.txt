@@ -12,7 +12,7 @@ consists of the electrodes with absolute angles larger than
 (centralActivation) Logarithm of mean of absolute values of
 activations of central electrodes of IC (Winkler et al., 2011).
 
-(central) Thesefeatures give the absolute values of the mean 
+(central) These features give the absolute values of the mean 
 activations of electrodes in various areas of the scalp. Each 
 area is defined as the mean over all electrodes, where the 
 contribution from each electrode to the mean is weighted by a 
