@@ -1,4 +1,6 @@
 *.mat
 *.sqlite
 *.pkl
+*.pickle
+/features/*
 /SCCN_data/*

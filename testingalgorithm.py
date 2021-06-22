@@ -1,8 +1,8 @@
 import numpy as np 
 import mne 
 import matplotlib.pyplot as plt
-from src.gp_algorithms import Multiclass_GP
-from src.kernels import SquaredExponentialKernel, MultiClassKernel, AGDTW
+from src.GP.gp_algorithms import Multiclass_GP
+from src.GP.kernels import SquaredExponentialKernel, MultiClassKernel, AGDTW
 import pandas as pd
 
 ## Simulate multiclass problem
@@ -92,4 +92,6 @@ SE = MultiClassKernel(num_classes = 10, params=[[2.2,2.6]],\
 K = SE(x_train_new)
 
 MC_GP = Multiclass_GP(SE, y_train_new, 10, K=K)
-f, stats = MC_GP.inference(tol = 1e-4, maxiter = 3)
+f, stats = MC_GP.inference(tol = 1e-6, maxiter = 50)
+out = MC_GP.predict(x_test_new, x = x_train_new)
+

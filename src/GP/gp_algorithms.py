@@ -1,6 +1,9 @@
 
 from scipy.linalg import cholesky, cho_solve
 import numpy as np 
+from scipy.optimize import brent, fminbound
+from scipy.optimize.optimize import fmin
+
 
 
 class Multiclass_GP():
@@ -20,7 +23,7 @@ class Multiclass_GP():
         else:
             self.K = K
 
-    def inference(self, maxiter=100, tol=1e-10):
+    def inference(self, maxiter=100, tol=1e-6):
 
         # Initialization
         self.n = int(len(self.y)/self.num_classes)
@@ -29,10 +32,10 @@ class Multiclass_GP():
         i = 0
         log_marginal_likelihood = -np.inf
         converged = False
+        a_old = np.zeros(f.shape)
+        print('Beginning inference...')
         while not converged and i < maxiter:
             i+=1
-            if i == 3:
-                print('iter', 3)
             print('Iteration',i)
             pi_temp = np.exp(f_temp)/np.sum(np.exp(f_temp), axis = 1)[:,np.newaxis] # eq 3.34
             pi = np.reshape(pi_temp,(self.num_classes*self.n),order= 'F')
@@ -54,7 +57,20 @@ class Multiclass_GP():
             M = cholesky(M_temp, lower = True)
             
             # eq. 3.39
-            b = (pi-pi*pi)*f + self.y - pi 
+            temp = pi*f
+            for c in range(self.num_classes):
+                temp_c = np.zeros(pi.shape)
+                idx = self.num_classes*self.n - c*self.n
+                temp_c[:idx] = pi[c*self.n:]
+                temp_c[idx:] = pi[:c*self.n]
+                temp_c = temp_c*pi
+
+                f_c = np.zeros(f.shape)
+                f_c[:idx] = f[c*self.n:]
+                f_c[idx:] = f[:c*self.n]
+                temp = temp - f_c*temp_c 
+
+            b = temp + self.y - pi 
             # eq. 3.39 using 3.45 and 3.47
             temp = np.reshape([np.dot(self.K[c*self.n:(c+1)*self.n,:],\
                                       b[c*self.n:(c+1)*self.n]) \
@@ -65,35 +81,60 @@ class Multiclass_GP():
                             for c in range(self.num_classes)], \
                            (self.num_classes*self.n)) 
             R_c = np.sum([c[i*self.n:(i+1)*self.n] for i in range(self.num_classes)], axis = 0).T
-            a = b - c + np.dot(E, cho_solve((M,True), R_c))
+            a_new = b - c + np.dot(E, cho_solve((M,True), R_c))
+            d_a = a_new - a_old
 
-            f = np.reshape([np.dot(self.K[c*self.n:(c+1)*self.n, :],\
-                                       a[c*self.n:(c+1)*self.n]) \
+            f_new = np.reshape([np.dot(self.K[c*self.n:(c+1)*self.n, :],\
+                                       a_new[c*self.n:(c+1)*self.n]) \
                                 for c in range(self.num_classes)], \
                                self.num_classes*self.n) 
             
             # Approximate marginal log likelihood
-            f_temp = np.array([f[c*self.n:(c+1)*self.n] for c in range(self.num_classes)]).T
-            lml = -1/2*np.sum(a*f) + np.sum(self.y*f) - \
-                np.sum(np.log(np.sum(np.exp(f_temp), axis = 1))) - \
-                np.sum(z) # eq 3.44
-
-            ls_iter = 0
-            while lml < log_marginal_likelihood and ls_iter < 5:
-                ls_iter += 1
-                f = 0.5*f
-                f_temp = np.array([f[c*self.n:(c+1)*self.n] for c in range(self.num_classes)]).T
-                lml = -1/2*np.sum(a*f) + np.sum(self.y*f) - \
-                        np.sum(np.log(np.sum(np.exp(f_temp), axis = 1))) - \
-                        np.sum(z)
+            f_temp_new = np.array([f_new[c*self.n:(c+1)*self.n] for c in range(self.num_classes)]).T
+            lml_new = -1/2*np.sum(a_new*f_new) + np.sum(self.y*f_new) - \
+                       np.sum(np.log(np.sum(np.exp(f_temp_new), axis = 1)))
             
+            if not log_marginal_likelihood-lml_new<tol:
+                def psi_line(s):
+                    a = a_old + s*d_a
+                    f = np.reshape([np.dot(self.K[c*self.n:(c+1)*self.n, :],\
+                                        a[c*self.n:(c+1)*self.n]) \
+                                    for c in range(self.num_classes)], \
+                                self.num_classes*self.n) 
+                    # Approximate marginal log likelihood
+                    f_temp = np.array([f[c*self.n:(c+1)*self.n] for c in range(self.num_classes)]).T
+                    obj = 1/2*np.sum(a*f) - np.sum(self.y*f) + \
+                        np.sum(np.log(np.sum(np.exp(f_temp), axis = 1)))
+                    
+                    return obj
+                
+                #s = brent(psi_line, tol = 1e-4, maxiter = 10)
+                s = fminbound(psi_line,0,2, xtol = 1e-2, maxfun = 100)
+                a = a_old + s*a_new
+                f = np.reshape([np.dot(self.K[c*self.n:(c+1)*self.n, :],\
+                                        a[c*self.n:(c+1)*self.n]) \
+                                    for c in range(self.num_classes)], \
+                                self.num_classes*self.n) 
+                
+                # Approximate marginal log likelihood
+                f_temp = np.array([f[c*self.n:(c+1)*self.n] for c in range(self.num_classes)]).T
+                lml = -psi_line(s)
+            else:
+                a = a_new 
+                f = f_new
+                f_temp = f_temp_new
+                lml = lml_new
+
+                
             if abs(lml-log_marginal_likelihood)<tol:
                 converged = True
                 log_marginal_likelihood = lml
                 self.f = f
                 break
             log_marginal_likelihood = lml
+            a_old = a
         
+        print('Ending inference with exit status converged:', converged)
         stats = dict()
         stats['lml'] = log_marginal_likelihood
         stats['iter'] = i
@@ -118,11 +159,15 @@ class Multiclass_GP():
         E = np.zeros((self.num_classes*self.n,self.n))
         n_test = len(xstar)
 
+        print('Calculating kernel between test input and training set.')
         if self.x is not None:
             kstar = self.kernel(self.x, xstar)
         else:
             kstar = self.kernel(x, xstar)
+        print('Calculating kernel for test input.')
+        kstarstar = self.kernel(xstar)
 
+        print('Calculating predictive distribution.')
         for c in range(self.num_classes):
             pi_c = pi[c*self.n:(c+1)*self.n]
             K_c = self.K[c*self.n:(c+1)*self.n, :]
@@ -135,7 +180,6 @@ class Multiclass_GP():
         M = cholesky(M_temp, lower = True)
         mu_star = np.zeros((len(xstar),self.num_classes))
         Sigma = np.zeros((n_test, self.num_classes, self.num_classes))
-        kstarstar = self.kernel(xstar)
 
         # Infer mean and covariance for all test data points
         for c in range(self.num_classes):
@@ -156,7 +200,7 @@ class Multiclass_GP():
 
         #MC sampling
         pistar = np.zeros((n_test, self.num_classes))
-
+        print('Beginning MC sampling.')
         for i in range(S):
             for n in range(n_test):
                 fstar = np.random.multivariate_normal(mu_star[n,:], Sigma[n,:,:])

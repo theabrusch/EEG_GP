@@ -1,6 +1,6 @@
 import numpy as np
-from fastdtw import fastdtw
-from scipy.spatial.distance import euclidean
+from tslearn.metrics import gak, sigma_gak
+from dtw import *
 
 class AGDTW():
     def __init__(self, sigma, **kwargs):
@@ -10,30 +10,52 @@ class AGDTW():
         if xstar is not None:
             K = np.zeros((len(x), len(xstar)))
             for i in range(len(xstar)):
-                print('Observation', i)
                 for j in range(len(x)):
-                    if (j-i)%20 == 0:
-                        print(j-i, 'out of', len(x)-i)
-                    _, path = fastdtw(xstar[i,:], x[j,:], dist=euclidean)
-                    path = np.array(path)
-                    dist = np.exp(-(xstar[i,path[:,0]] - x[j,path[:,1]])**2/self.sigma**2)
+                    out = dtw(xstar[i,:], x[j,:])
+                    dist = np.exp(-(xstar[i,out.index1] - \
+                                    x[j,out.index2])**2/self.sigma**2)
                     K[j,i] = np.sum(dist)
 
         else:
             K = np.zeros((len(x), len(x)))
             for i in range(len(x)):
-                print('Observation', i)
                 for j in range(i, len(x)):
-                    if (j-i)%20 == 0:
-                        print(j-i, 'out of', len(x)-i)
-                    _, path = fastdtw(x[i,:], x[j,:], dist=euclidean)
-                    path = np.array(path)
-                    dist = np.exp(-(x[i,path[:,0]] - x[j,path[:,1]])**2/self.sigma**2)
+                    out = dtw(x[i,:], x[j,:])
+                    dist = np.exp(-(x[i,out.index1] - x[j,out.index2])**2/self.sigma**2)
                     K[j,i] = np.sum(dist)
                     
             # add lower triangle
             K = K + K.T - np.diag(K)
         return K
+
+class FastGA():
+    def __init__(self, x):
+        self.sigma = sigma_gak(x)
+        print('Sigma', self.sigma)
+    
+    def __call__(self, x, xstar = None):
+        if xstar is not None:
+            K = np.zeros((len(x), len(xstar)))
+            for i in range(len(xstar)):
+                print('Observation', i)
+                for j in range(len(x)):
+                    if (j-i)%20 == 0:
+                        print(j-i, 'out of', len(x)-i)
+                    K[j,i] = gak(x[j], xstar[i], sigma=self.sigma)
+        else:
+            K = np.zeros((len(x),len(x)))
+            for i in range(len(x)):
+                print('Observation', i)
+                for j in range(i, len(x)):
+                    if (j-i)%20 == 0:
+                        print(j-i, 'out of', len(x)-i)
+                    K[j,i] = gak(x[j], x[i], sigma=self.sigma)
+            # add lower triangle
+            K = K + K.T - np.diag(K)
+            
+        return K
+
+    
 
 
 class SquaredExponentialKernel():
