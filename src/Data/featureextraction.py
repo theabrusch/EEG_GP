@@ -68,6 +68,7 @@ class FeatureExtractor():
         spatialfeatures['central'] = self.central()
         spatialfeatures['centralActivation'] = self.centralActivation()
         spatialfeatures['abs_med_topog'] = self.abs_med_topog()
+        spatialfeatures['scalpEntropy'] = self.scalpEntropy()
         scalpact, virt = self.scalpact()
         spatialfeatures[virt] = scalpact
 
@@ -90,6 +91,15 @@ class FeatureExtractor():
         '''
         (scalpEntropy) The entropy of the scalp map.
         '''
+        icacts = self.data['icawinv']
+        scalpEntropy = np.zeros(icacts[1])
+        for ic in range(icacts[1]):
+            kde = gaussian_kde(icacts[:,ic])
+            dist = kde(icacts[:,ic])
+            scalpEntropy[ic] = entropy(dist)
+
+        return scalpEntropy
+
 
     def SAD(self):
         '''
