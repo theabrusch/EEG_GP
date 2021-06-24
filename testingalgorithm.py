@@ -31,7 +31,7 @@ SE = MultiClassKernel(num_classes = 3, params=[[1,1.5]],\
 K = SE(x)
 
 MC_GP = Multiclass_GP(SE, y, 3, K=K)
-f, stats = MC_GP.inference()
+f, stats = MC_GP.inference(maxiter = 10)
 
 xtest = x[[0,10,20],:]
 

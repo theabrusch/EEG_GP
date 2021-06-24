@@ -22,11 +22,14 @@ class Multiclass_GP():
         else:
             self.K = K
 
-    def inference(self, maxiter=100, tol=1e-6):
+    def inference(self, maxiter=100, tol=1e-6, f_init = None):
 
         # Initialization
         self.n = int(len(self.y)/self.num_classes)
-        f = np.zeros(len(self.y))
+        if f_init is None:
+            f = np.zeros(len(self.y))
+        else:
+            f = f_init
         f_temp = np.array([f[c*self.n:(c+1)*self.n] for c in range(self.num_classes)]).T
         i = 0
         log_marginal_likelihood = -np.inf
@@ -212,5 +215,8 @@ class Multiclass_GP():
                 pistar[n,:] = pistar[n,:] + np.exp(fstar)/np.sum(np.exp(fstar))
         
         pistar = pistar / S
+        dist = dict()
+        dist['mean'] = mu_star
+        dist['Cov'] = Sigma
 
-        return pistar
+        return pistar, dist

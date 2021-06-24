@@ -59,7 +59,7 @@ class FastGA():
 
 
 class SquaredExponentialKernel():
-    def __init__(self, l, sigmaf, **kwargs):
+    def __init__(self, l, sigmaf=1, **kwargs):
         self.l = l
         self.sigmaf = sigmaf
         
