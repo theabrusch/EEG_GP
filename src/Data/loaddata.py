@@ -53,8 +53,12 @@ def loademotiondata(subj_path):
 
     print('Computing ICs.')
     ics = np.matmul(data['icaweights'], data['data'])
-    data['ics'] = (ics-np.mean(ics, axis =1)[:,np.newaxis])/np.std(ics, axis =1)[:,np.newaxis]
+    #Normalise time series
+    data['ics'] = (ics-np.mean(ics, axis =1)[:,np.newaxis])\
+                  /np.std(ics, axis =1)[:,np.newaxis]
     ics_unfilt = np.matmul(data['icaweights'], data['unfilt'])
-    data['ics_unfilt'] = (ics_unfilt-np.mean(ics_unfilt, axis =1)[:,np.newaxis])/np.std(ics_unfilt, axis =1)[:,np.newaxis]
+    data['ics_unfilt'] = (ics_unfilt-\
+                          np.mean(ics_unfilt, axis =1)[:,np.newaxis])\
+                          /np.std(ics_unfilt, axis =1)[:,np.newaxis]
 
     return data
