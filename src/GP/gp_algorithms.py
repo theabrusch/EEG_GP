@@ -1,10 +1,8 @@
 
 from scipy.linalg import cholesky, cho_solve
 import numpy as np 
-from scipy.optimize import brent, fminbound
-from scipy.optimize.optimize import fmin
-
-
+from scipy.optimize import fminbound
+import warnings
 
 class Multiclass_GP():
 
@@ -14,6 +12,7 @@ class Multiclass_GP():
         self.num_classes = C
         self.f = None
         self.x = x
+        self.converged = False
 
         if K is None:
             try:
@@ -130,10 +129,15 @@ class Multiclass_GP():
                 converged = True
                 log_marginal_likelihood = lml
                 self.f = f
+                self.converged = True
                 break
             log_marginal_likelihood = lml
             a_old = a
         
+        if not converged:
+            warnings.warn('Inference has not converged. Predictions may be uncertain.', UserWarning)
+            self.f = f
+
         print('Ending inference with exit status converged:', converged)
         stats = dict()
         stats['lml'] = log_marginal_likelihood
@@ -146,11 +150,12 @@ class Multiclass_GP():
     def predict(self, xstar, x = None, S=100):
         if self.f is None:
             raise ValueError('Run inference before prediction')
-        
         if self.x is None and x is None:
             raise ValueError('The training input must be given at', \
                               'initialization of the class or when calling predict.')
-
+        if not self.converged:
+            warnings.warn('Inference did not converge. Running predictions'+\
+                          'with unstable f.')
         # Initial computations
         f_temp = np.array([self.f[c*self.n:(c+1)*self.n] for c in range(self.num_classes)]).T
         pi_temp = np.exp(f_temp)/np.sum(np.exp(f_temp), axis = 1)[:,np.newaxis] # eq 3.34
