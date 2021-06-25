@@ -13,7 +13,7 @@ for subj_fold in subjfolders:
     subj = subj_fold.split('/')[-2]
     FE = FeatureExtractor(data, subject = subj)
     features = FE()
-    filepath = 'features/emotion/' + subj 
+    filepath = 'features/emotion/' + subj + '.pkl'
     pickle.dump(features, open(filepath, 'wb'))
 end = time.time()
 
