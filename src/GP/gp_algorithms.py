@@ -1,7 +1,7 @@
 
 from scipy.linalg import cholesky, cho_solve
 import numpy as np 
-from scipy.optimize import fminbound
+from scipy.optimize import fminbound, brent
 import warnings
 
 class Multiclass_GP():
@@ -35,6 +35,7 @@ class Multiclass_GP():
         log_marginal_likelihood = -np.inf
         converged = False
         a_old = np.zeros(f.shape)
+
         print('Beginning inference...')
         while not converged and i < maxiter:
             i+=1
@@ -86,56 +87,41 @@ class Multiclass_GP():
             a_new = b - c + np.dot(E, cho_solve((M,True), R_c))
             d_a = a_new - a_old
 
-            f_new = np.reshape([np.dot(self.K[c*self.n:(c+1)*self.n, :],\
-                                       a_new[c*self.n:(c+1)*self.n]) \
-                                for c in range(self.num_classes)], \
-                               self.num_classes*self.n) 
-            
-            # Approximate marginal log likelihood
-            f_temp_new = np.array([f_new[c*self.n:(c+1)*self.n] for c in range(self.num_classes)]).T
-            lml_new = -1/2*np.sum(a_new*f_new) + np.sum(self.y*f_new) - \
-                       np.sum(np.log(np.sum(np.exp(f_temp_new), axis = 1)))
-            
-            if not log_marginal_likelihood-lml_new<tol:
-                def psi_line(s):
-                    a = a_old + s*d_a
-                    f = np.reshape([np.dot(self.K[c*self.n:(c+1)*self.n, :],\
-                                        a[c*self.n:(c+1)*self.n]) \
-                                    for c in range(self.num_classes)], \
-                                self.num_classes*self.n) 
-                    # Approximate marginal log likelihood
-                    f_temp = np.array([f[c*self.n:(c+1)*self.n] for c in range(self.num_classes)]).T
-                    obj = 1/2*np.sum(a*f) - np.sum(self.y*f) + \
-                        np.sum(np.log(np.sum(np.exp(f_temp), axis = 1)))
-                    
-                    return obj
-                
-                #s = brent(psi_line, tol = 1e-4, maxiter = 10)
-                s = fminbound(psi_line,0,2, xtol = 1e-2, maxfun = 100)
-                a = a_old + s*a_new
+            # line search
+            def psi_line(s, a_old, d_a):
+                a = a_old + s*d_a
                 f = np.reshape([np.dot(self.K[c*self.n:(c+1)*self.n, :],\
-                                        a[c*self.n:(c+1)*self.n]) \
-                                    for c in range(self.num_classes)], \
-                                self.num_classes*self.n) 
-                
+                                    a[c*self.n:(c+1)*self.n]) \
+                                for c in range(self.num_classes)], \
+                            self.num_classes*self.n) 
                 # Approximate marginal log likelihood
                 f_temp = np.array([f[c*self.n:(c+1)*self.n] for c in range(self.num_classes)]).T
-                lml = -psi_line(s)
-            else:
-                a = a_new 
-                f = f_new
-                f_temp = f_temp_new
-                lml = lml_new
-
+                obj = 1/2*np.sum(a*f) - np.sum(self.y*f) + \
+                    np.sum(np.log(np.sum(np.exp(f_temp), axis = 1)))
+            
+                return obj
+            
+            s = brent(psi_line, args = (a_old,d_a), brack = (0,2), \
+                      tol = 1e-4, maxiter = 10)
+            a = a_old + s*d_a
+            #update f based on new a
+            f = np.reshape([np.dot(self.K[c*self.n:(c+1)*self.n, :],\
+                                    a[c*self.n:(c+1)*self.n]) \
+                                for c in range(self.num_classes)], \
+                            self.num_classes*self.n) 
+            
+            f_temp = np.array([f[c*self.n:(c+1)*self.n] for c in range(self.num_classes)]).T
+            # Approximate marginal log likelihood
+            lml = -psi_line(s, a_old, d_a)
+            a_old = a
                 
             if abs(lml-log_marginal_likelihood)<tol:
                 converged = True
-                log_marginal_likelihood = lml
+                log_marginal_likelihood = lml - np.sum(z)
                 self.f = f
                 self.converged = True
                 break
             log_marginal_likelihood = lml
-            a_old = a
         
         if not converged:
             warnings.warn('Inference has not converged. Predictions may be uncertain.', UserWarning)
@@ -148,7 +134,7 @@ class Multiclass_GP():
         stats['info'] = converged
 
         return f_temp, stats
-
+    
 
     def predict(self, xstar, x = None, S=100):
         if self.f is None:
