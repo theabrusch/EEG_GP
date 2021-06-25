@@ -3,11 +3,7 @@ import pickle
 import numpy as np
 from src.GP.gp_algorithms import Multiclass_GP
 from src.GP.kernels import SquaredExponentialKernel, MultiClassKernel
-import glob
-import matplotlib.pyplot as plt
 from sklearn.model_selection import KFold
-from scipy.io import loadmat
-import matplotlib.pyplot as plt
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import balanced_accuracy_score
 
@@ -16,8 +12,7 @@ subjects = df_collect['subject'].unique()
 
 kfold = KFold(n_splits = 10)
 splits = kfold.split(subjects)
-#sigmas = np.arange(1, 3, step = 0.1)
-sigmas = [2,3,4,5,6,7,8,9,10]
+sigmas = np.arange(2, 4, step = 0.1)
 
 summary = dict()
 
@@ -36,7 +31,7 @@ for (train,test) in splits:
     # sample 50% of the mixed components
     mixed = df_train.index[df_train['label']==0]
     n_mixed = (df_train['label']==0).sum()
-    n_samp_mixed = int(n_mixed*0.5)
+    n_samp_mixed = int(n_mixed*0.1)
     mixed_sampled = np.random.choice(mixed, n_samp_mixed)
     not_mixed = df_train.index[y!=0]
     X_train = np.append(X[mixed_sampled,:], X[not_mixed,:], axis = 0)
@@ -77,8 +72,6 @@ for (train,test) in splits:
     max_loglik = np.argmax(logliks)
     MC_GP = sol[max_loglik]
     sig = sigmas[max_loglik]
-    SE = MultiClassKernel(num_classes = 6, params=[[sig,1]],\
-                          base_kernel = SquaredExponentialKernel)
     out = MC_GP.predict(X_test_stand, x = X_stand)
     pred = np.argmax(out[0], axis = 1)
 
@@ -88,12 +81,15 @@ for (train,test) in splits:
     out_LR = LR.predict(X_test_stand)
 
     summary[j] = dict()
-    summary[j]['test'] = test 
+    summary[j]['test_split'] = test 
     summary[j]['best_sigma'] = sig
     summary[j]['y_test'] = y_test
-    summary[j]['pred'] = pred
+    summary[j]['predGP'] = pred
+    summary[j]['accGP'] = balanced_accuracy_score(y_test, pred)
     summary[j]['dist'] = out[1]
     summary[j]['predLR'] = out_LR
+    summary[j]['accLR'] = balanced_accuracy_score(y_test, out_LR)
+    summary[j]['logliks'] = logliks
     j+=1
 
 pickle.dump(summary, open('outputs/training.pkl', 'wb'))
