@@ -1,5 +1,5 @@
 #!/bin/sh
-#BSUB -m crossval GP
+#BSUB -J crossval GP
 ### number of core
 #BSUB -n 1 
 ### specify that all cores should be on the same host
