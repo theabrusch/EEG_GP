@@ -67,6 +67,7 @@ for (train,test) in splits:
         f_init = MC_GP.f
         logliks[i] = stats['lml']
         sol.append(MC_GP)
+        i+=1
 
     #Get test results based on the kernel with maximum likelihood 
     max_loglik = np.argmax(logliks)
@@ -93,3 +94,5 @@ for (train,test) in splits:
     j+=1
 
 pickle.dump(summary, open('outputs/training.pkl', 'wb'))
+
+summary = pickle.load(open('outputs/training.pkl', 'rb'))
