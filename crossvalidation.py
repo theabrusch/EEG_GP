@@ -16,8 +16,7 @@ subjects = df_collect['subject'].unique()
 
 kfold = KFold(n_splits = 10)
 splits = kfold.split(subjects)
-#sigmas = np.arange(1, 3, step = 0.1)
-sigmas = [3]
+sigmas = np.arange(2, 4, step = 0.1)
 
 summary = dict()
 
@@ -86,16 +85,15 @@ for (train,test) in splits:
     out_LR = LR.predict(X_test_stand)
 
     summary[j] = dict()
-    summary[j]['test'] = test 
+    summary[j]['test_split'] = test 
     summary[j]['best_sigma'] = sig
     summary[j]['y_test'] = y_test
-    summary[j]['pred'] = pred
+    summary[j]['predGP'] = pred
+    summary[j]['accGP'] = balanced_accuracy_score(y_test, pred)
     summary[j]['dist'] = out[1]
     summary[j]['predLR'] = out_LR
+    summary[j]['accLR'] = balanced_accuracy_score(y_test, out_LR)
+    summary[j]['logliks'] = logliks
     j+=1
 
 pickle.dump(summary, open('outputs/training.pkl', 'wb'))
-
-summary = pickle.load(open('outputs/training.pkl', 'rb'))
-
-temp = summary[0]
