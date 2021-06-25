@@ -82,7 +82,7 @@ for (train,test) in splits:
     X_test_stand = (X_test-np.mean(X, axis = 0)[np.newaxis,:])\
                     /np.std(X, axis = 0)[np.newaxis,:]
     LR = LogisticRegression(multi_class= 'multinomial', class_weight='balanced', max_iter = 100)
-    LR.fit(X_stand, y_temp)
+    LR.fit(X_stand, y)
     out_LR = LR.predict(X_test_stand)
 
     summary[j] = dict()
