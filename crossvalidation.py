@@ -17,7 +17,7 @@ subjects = df_collect['subject'].unique()
 kfold = KFold(n_splits = 10)
 splits = kfold.split(subjects)
 #sigmas = np.arange(1, 3, step = 0.1)
-sigmas = [2,3,4,5,6,7,8,9,10]
+sigmas = [3]
 
 summary = dict()
 
@@ -36,7 +36,7 @@ for (train,test) in splits:
     # sample 50% of the mixed components
     mixed = df_train.index[df_train['label']==0]
     n_mixed = (df_train['label']==0).sum()
-    n_samp_mixed = int(n_mixed*0.5)
+    n_samp_mixed = int(n_mixed*0.1)
     mixed_sampled = np.random.choice(mixed, n_samp_mixed)
     not_mixed = df_train.index[y!=0]
     X_train = np.append(X[mixed_sampled,:], X[not_mixed,:], axis = 0)
@@ -77,8 +77,6 @@ for (train,test) in splits:
     max_loglik = np.argmax(logliks)
     MC_GP = sol[max_loglik]
     sig = sigmas[max_loglik]
-    SE = MultiClassKernel(num_classes = 6, params=[[sig,1]],\
-                          base_kernel = SquaredExponentialKernel)
     out = MC_GP.predict(X_test_stand, x = X_stand)
     pred = np.argmax(out[0], axis = 1)
 
@@ -97,3 +95,7 @@ for (train,test) in splits:
     j+=1
 
 pickle.dump(summary, open('outputs/training.pkl', 'wb'))
+
+summary = pickle.load(open('outputs/training.pkl', 'rb'))
+
+temp = summary[0]
