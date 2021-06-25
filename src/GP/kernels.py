@@ -1,5 +1,5 @@
 import numpy as np
-from tslearn.metrics import gak, sigma_gak
+#from tslearn.metrics import gak, sigma_gak
 from dtw import *
 
 class AGDTW():
