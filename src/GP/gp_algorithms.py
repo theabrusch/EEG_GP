@@ -147,7 +147,7 @@ class Multiclass_GP():
         stats['iter'] = i
         stats['info'] = converged
 
-        return f, stats
+        return f_temp, stats
 
 
     def predict(self, xstar, x = None, S=100):
