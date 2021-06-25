@@ -3,11 +3,7 @@ import pickle
 import numpy as np
 from src.GP.gp_algorithms import Multiclass_GP
 from src.GP.kernels import SquaredExponentialKernel, MultiClassKernel
-import glob
-import matplotlib.pyplot as plt
 from sklearn.model_selection import KFold
-from scipy.io import loadmat
-import matplotlib.pyplot as plt
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import balanced_accuracy_score
 
