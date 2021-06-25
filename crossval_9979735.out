@@ -1,0 +1,50 @@
+Runnin script...
+/zhome/89/a/117273/.lsbatch/1624620047.9979735.shell: line 10: 85592 Killed                  python3 crossvalidation.py
+
+------------------------------------------------------------
+Sender: LSF System <lsfadmin@hpc.dtu.dk>
+Subject: Job 9979735: <crossval> in cluster <dcc> Exited
+
+Job <crossval> was submitted from host <n-62-27-21> by user <theb> in cluster <dcc> at Fri Jun 25 13:20:47 2021
+Job was executed on host(s) <n-62-31-23>, in queue <hpc>, as user <theb> in cluster <dcc> at Fri Jun 25 13:20:49 2021
+</zhome/89/a/117273> was used as the home directory.
+</zhome/89/a/117273/Desktop/EEG_GP> was used as the working directory.
+Started at Fri Jun 25 13:20:49 2021
+Terminated at Fri Jun 25 13:22:22 2021
+Results reported at Fri Jun 25 13:22:22 2021
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+#!/bin/sh
+#BSUB -J crossval GP
+#BSUB -R "rusage[mem=32GB]"
+#BSUB -W 10:00
+#BSUB -o logs/Output_%J.out
+#BSUB -e logs/Error_%J.err
+
+echo "Runnin script..."
+
+python3 crossvalidation.py 
+
+------------------------------------------------------------
+
+TERM_MEMLIMIT: job killed after reaching LSF memory usage limit.
+Exited with exit code 137.
+
+Resource usage summary:
+
+    CPU time :                                   53.88 sec.
+    Max Memory :                                 1024 MB
+    Average Memory :                             808.33 MB
+    Total Requested Memory :                     1024.00 MB
+    Delta Memory :                               0.00 MB
+    Max Swap :                                   -
+    Max Processes :                              4
+    Max Threads :                                5
+    Run time :                                   95 sec.
+    Turnaround time :                            95 sec.
+
+The output (if any) is above this job summary.
+
