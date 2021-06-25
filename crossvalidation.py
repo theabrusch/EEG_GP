@@ -10,7 +10,7 @@ from sklearn.metrics import balanced_accuracy_score
 df_collect = pickle.load(open('features/data_collect.pkl', 'rb'))
 subjects = df_collect['subject'].unique()
 
-kfold = KFold(n_splits = 10)
+kfold = KFold(n_splits = 34)
 splits = kfold.split(subjects)
 sigmas = np.arange(2, 4, step = 0.1)
 
@@ -18,7 +18,7 @@ summary = dict()
 
 j = 0
 for (train,test) in splits:
-    print('Split', j+1, 'out of 10')
+    print('Split', j+1, 'out of 34')
     train_subjects = subjects[train]
     test_subjects = subjects[test]
 
