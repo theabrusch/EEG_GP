@@ -12,7 +12,7 @@ subjects = df_collect['subject'].unique()
 
 kfold = KFold(n_splits = 34)
 splits = kfold.split(subjects)
-sigmas = np.arange(2, 4, step = 0.1)
+sigmas = np.arange(3, 6, step = 0.1)
 
 summary = dict()
 
@@ -77,6 +77,10 @@ for (train,test) in splits:
     pred = np.argmax(out[0], axis = 1)
 
     #Fit with Logistic regression
+    X_stand = (X-np.mean(X, axis = 0)[np.newaxis,:])\
+               /np.std(X, axis = 0)[np.newaxis,:]
+    X_test_stand = (X_test-np.mean(X, axis = 0)[np.newaxis,:])\
+                    /np.std(X, axis = 0)[np.newaxis,:]
     LR = LogisticRegression(multi_class= 'multinomial', class_weight='balanced', max_iter = 100)
     LR.fit(X_stand, y_temp)
     out_LR = LR.predict(X_test_stand)
