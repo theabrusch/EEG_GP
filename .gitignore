@@ -2,6 +2,7 @@
 *.sqlite
 *.pkl
 *.pickle
-/features/*
+emotion/*
 /SCCN_data/*
 logs/*
+features/*
