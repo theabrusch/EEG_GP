@@ -1,7 +1,7 @@
 #!/bin/sh
 #BSUB -q gpuv100
 #BSUB -gpu "num=1"
-#BSUB -J Latent_CV_5p
+#BSUB -m crossval GP
 ### number of core
 #BSUB -n 1 
 ### specify that all cores should be on the same host
