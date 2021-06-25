@@ -1,6 +1,4 @@
 #!/bin/sh
-#BSUB -q gpuv100
-#BSUB -gpu "num=1"
 #BSUB -m crossval GP
 ### number of core
 #BSUB -n 1 
