@@ -12,7 +12,7 @@ subjects = df_collect['subject'].unique()
 
 kfold = KFold(n_splits = 34)
 splits = kfold.split(subjects)
-sigmas = np.arange(3, 6, step = 0.1)
+sigmas = np.arange(3, 5, step = 0.1)
 
 summary = dict()
 
