@@ -12,7 +12,7 @@ subjects = df_collect['subject'].unique()
 
 kfold = KFold(n_splits = 34)
 splits = kfold.split(subjects)
-sigmas = np.arange(4, 5, step = 0.05)
+sigmas = np.arange(3, 5, step = 0.05)
 balanced_sampling = True
 min_balanced_sampling = True
 
