@@ -13,6 +13,8 @@ subjects = df_collect['subject'].unique()
 kfold = KFold(n_splits = 34)
 splits = kfold.split(subjects)
 sigmas = np.arange(4, 5, step = 0.05)
+balanced_sampling = True
+min_balanced_sampling = True
 
 summary = dict()
 
@@ -29,13 +31,38 @@ for (train,test) in splits:
     y = df_train['label'].values
 
     # sample 50% of the mixed components
-    mixed = df_train.index[df_train['label']==0]
-    n_mixed = (df_train['label']==0).sum()
-    n_samp_mixed = int(n_mixed*0.08)
-    mixed_sampled = np.random.choice(mixed, n_samp_mixed)
-    not_mixed = df_train.index[y!=0]
-    X_train = np.append(X[mixed_sampled,:], X[not_mixed,:], axis = 0)
-    y_temp = np.append(y[mixed_sampled], y[not_mixed], axis = 0)
+    if not balanced_sampling:
+        mixed = df_train.index[df_train['label']==0]
+        n_mixed = (df_train['label']==0).sum()
+        n_samp_mixed = int(n_mixed*0.08)
+        mixed_sampled = np.random.choice(mixed, n_samp_mixed)
+        not_mixed = df_train.index[y!=0]
+        X_train = np.append(X[mixed_sampled,:], X[not_mixed,:], axis = 0)
+        y_temp = np.append(y[mixed_sampled], y[not_mixed], axis = 0)
+    else:
+        val, counts = np.unique(y, return_counts = True)
+        argmincount = np.argmin(counts)
+        mincount = counts[argmincount]
+        if min_balanced_sampling:
+            samples = mincount
+        else:
+            samples = int(mincount*1.5)
+            
+        temp_count = 0
+        for lab in val:
+            val_idx = np.where(y==val)
+            if len(val_idx) < samples:
+                samp_val = np.random.choice(val_idx, samples, replace = True)
+            else:
+                samp_val = np.random.choice(val_idx, samples, replace = False)
+                
+            if temp_count==0:
+                X_train = X[samp_val,:]
+                y_temp = y[samp_val,:]
+            else:
+                X_train = np.append(X_train, X[samp_val,:], axis =0)
+                y_temp = np.append(y_temp, y[samp_val,:], axis = 0)
+
 
     #transform y_train to format used by GP inference
     y_train = np.reshape(pd.get_dummies(y_temp).values,\
