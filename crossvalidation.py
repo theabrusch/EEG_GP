@@ -98,6 +98,7 @@ for (train,test) in splits:
     summary[j]['accLR'] = balanced_accuracy_score(y_test, out_LR)
     summary[j]['logliks'] = logliks
     summary[j]['likLR'] = lik_LR
+    summary[j]['y_train'] = y
     j+=1
 
 pickle.dump(summary, open('outputs/training_008.pkl', 'wb'))
