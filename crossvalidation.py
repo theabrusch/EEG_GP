@@ -84,17 +84,20 @@ for (train,test) in splits:
     LR = LogisticRegression(multi_class= 'multinomial', class_weight='balanced', max_iter = 100)
     LR.fit(X_stand, y)
     out_LR = LR.predict(X_test_stand)
+    lik_LR = LR.predict_proba(X_test_stand)
 
     summary[j] = dict()
     summary[j]['test_split'] = test 
     summary[j]['best_sigma'] = sig
     summary[j]['y_test'] = y_test
     summary[j]['predGP'] = pred
+    summary[j]['likGP'] = out[0]
     summary[j]['accGP'] = balanced_accuracy_score(y_test, pred)
     summary[j]['dist'] = out[1]
     summary[j]['predLR'] = out_LR
     summary[j]['accLR'] = balanced_accuracy_score(y_test, out_LR)
     summary[j]['logliks'] = logliks
+    summary[j]['likLR'] = lik_LR
     j+=1
 
 pickle.dump(summary, open('outputs/training.pkl', 'wb'))

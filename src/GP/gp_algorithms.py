@@ -134,7 +134,6 @@ class Multiclass_GP():
         stats['info'] = converged
 
         return f_temp, stats
-    
 
     def predict(self, xstar, x = None, S=100):
         if self.f is None:
