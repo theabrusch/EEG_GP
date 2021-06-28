@@ -12,7 +12,7 @@ subjects = df_collect['subject'].unique()
 
 kfold = KFold(n_splits = 34)
 splits = kfold.split(subjects)
-sigmas = np.arange(3, 5, step = 0.1)
+sigmas = np.arange(4, 5, step = 0.05)
 
 summary = dict()
 
@@ -31,7 +31,7 @@ for (train,test) in splits:
     # sample 50% of the mixed components
     mixed = df_train.index[df_train['label']==0]
     n_mixed = (df_train['label']==0).sum()
-    n_samp_mixed = int(n_mixed*0.1)
+    n_samp_mixed = int(n_mixed*0.08)
     mixed_sampled = np.random.choice(mixed, n_samp_mixed)
     not_mixed = df_train.index[y!=0]
     X_train = np.append(X[mixed_sampled,:], X[not_mixed,:], axis = 0)
@@ -95,8 +95,7 @@ for (train,test) in splits:
     summary[j]['predLR'] = out_LR
     summary[j]['accLR'] = balanced_accuracy_score(y_test, out_LR)
     summary[j]['logliks'] = logliks
+    summary[j]['y_train'] = y_temp
     j+=1
 
-pickle.dump(summary, open('outputs/training.pkl', 'wb'))
-
-summary = pickle.load(open('outputs/training.pkl', 'rb'))
+pickle.dump(summary, open('outputs/training_008.pkl', 'wb'))
