@@ -50,18 +50,19 @@ for (train,test) in splits:
             
         temp_count = 0
         for lab in val:
-            val_idx = np.where(y==val)
-            if len(val_idx) < samples:
-                samp_val = np.random.choice(val_idx, samples, replace = True)
+            lab_idx = np.where(y==lab)[0]
+            if len(lab_idx) < samples:
+                samp_lab = np.random.choice(lab_idx, samples, replace = True)
             else:
-                samp_val = np.random.choice(val_idx, samples, replace = False)
-                
+                samp_lab = np.random.choice(lab_idx, samples, replace = False)
+
             if temp_count==0:
-                X_train = X[samp_val,:]
-                y_temp = y[samp_val,:]
+                X_train = X[samp_lab,:]
+                y_temp = y[samp_lab]
             else:
-                X_train = np.append(X_train, X[samp_val,:], axis =0)
-                y_temp = np.append(y_temp, y[samp_val,:], axis = 0)
+                X_train = np.append(X_train, X[samp_lab,:], axis =0)
+                y_temp = np.append(y_temp, y[samp_lab], axis = 0)
+            temp_count += 1
 
 
     #transform y_train to format used by GP inference

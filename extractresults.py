@@ -1,7 +1,7 @@
 import pickle
 import numpy as np
 
-summary = pickle.load(open('outputs/training.pkl', 'rb'))
+summary = pickle.load(open('outputs/training_005.pkl', 'rb'))
 
 accuracies_GP = np.zeros(len(summary.keys()))
 accuracies_LR = np.zeros(len(summary.keys()))
