@@ -9,7 +9,7 @@ import seaborn as sns
 df_collect = pickle.load(open('features/data_collect.pkl', 'rb'))
 val, count = np.unique(df_collect['label'], return_counts=True)
 hist = count/np.sum(count)
-labs = ['Mixed', 'Blink', 'Lateral eyes', 'Muscle', 'Heart', 'Neural']
+labs = ['Mixed', 'Blink', 'Lat. eyes', 'Muscle', 'Heart', 'Neural']
 x_plac = np.array(range(len(labs)))
 
 fig, ax = plt.subplots(figsize=(10,5))    
@@ -168,6 +168,6 @@ plt.show()
 confGP = confusion_matrix(ytest, predGP, normalize='true')
 confLR = confusion_matrix(ytest, predLR, normalize='true')
 
-disp = ConfusionMatrixDisplay(confLR, display_labels = labs)
+disp = ConfusionMatrixDisplay(confGP, display_labels = labs)
 disp.plot(cmap = 'Greys')
 plt.show()

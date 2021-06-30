@@ -12,8 +12,7 @@ subjects = df_collect['subject'].unique()
 
 kfold = KFold(n_splits = 35)
 splits = kfold.split(subjects)
-sigmas = np.arange(8, 15, step = 0.1)
-deltas = np.arange(4,6, step = 0.1)
+sigmas = np.arange(3,5, step = 0.05)
 
 balanced_sampling = True
 min_balanced_sampling = True
@@ -25,7 +24,6 @@ for (train,test) in splits:
     print('Split', j+1, 'out of 34')
     train_subjects = subjects[train]
     test_subjects = subjects[test]
-
     # Get train dataset
     df_train = df_collect[np.isin(df_collect['subject'], \
                                     train_subjects)].reset_index()
@@ -81,7 +79,6 @@ for (train,test) in splits:
                /np.std(X_train, axis = 0)[np.newaxis,:]
     X_test_stand = (X_test-np.mean(X_train, axis = 0)[np.newaxis,:])\
                     /np.std(X_train, axis = 0)[np.newaxis,:]
-    sigs = np.zeros(len(deltas))
     f_init = None
     sol = []
     logliks = np.zeros(len(sigmas))
@@ -104,7 +101,7 @@ for (train,test) in splits:
     MC_GP = sol[max_loglik]
     sig = sigmas[max_loglik]
 
-    out = MC_GP.predict(X_test_stand, x = X_stand)
+    out = MC_GP.predict(X_test_stand, x = X_stand, S=500)
     pred = np.argmax(out[0], axis = 1)
 
     #Fit with Logistic regression

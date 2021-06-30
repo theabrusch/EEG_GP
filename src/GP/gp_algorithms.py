@@ -137,6 +137,7 @@ class Multiclass_GP():
         return f_temp, stats
 
     def predict(self, xstar, x = None, S=100, show_outputs=True):
+        testn = len(xstar)
         if self.f is None:
             raise ValueError('Run inference before prediction')
         if self.x is None and x is None:
@@ -178,22 +179,28 @@ class Multiclass_GP():
         mu_star = np.zeros((len(xstar),self.num_classes))
         Sigma = np.zeros((n_test, self.num_classes, self.num_classes))
 
+        kwinv = np.dot(E, cho_solve((M,True), E.T))
         # Infer mean and covariance for all test data points
         for c in range(self.num_classes):
             pi_c = pi[c*self.n:(c+1)*self.n, np.newaxis]
             y_c = self.y[c*self.n:(c+1)*self.n, np.newaxis]
             kstar_c = kstar[c*self.n:(c+1)*self.n]
+
             mu_star_c = np.sum((y_c-pi_c)*kstar_c, axis = 0)
             mu_star[:,c] = mu_star_c
-            E_c = E[c*self.n:(c+1)*self.n,:]
-            b = np.dot(E_c, kstar_c)
-            c_def = np.dot(E_c, cho_solve((M, True), b))
 
             for c_mark in range(self.num_classes):
-                Sigma[:,c,c_mark] = np.sum(c_def*kstar[c_mark*self.n:(c_mark+1)*self.n], axis = 0)
-            
-            k_starstar_c = kstarstar[c,:]
-            Sigma[:,c,c] = Sigma[:,c,c] + k_starstar_c - np.sum(b*kstar_c, axis = 0)
+                if c == c_mark:
+                    k_starstar_c = np.diag(kstarstar[c*testn:(c+1)*testn,:])
+                    Sigma[:,c,c_mark] = k_starstar_c - \
+                                        np.diag(np.dot(kstar_c.T,\
+                                        np.dot(kwinv[c*self.n:(c+1)*self.n, c_mark*self.n:(c_mark+1)*self.n]\
+                                                    ,kstar_c)))
+                else:
+                    kstar_cmark = kstar[c_mark*self.n:(c_mark+1)*self.n]
+                    Sigma[:,c,c_mark] = - np.diag(np.dot(kstar_cmark.T,\
+                                          np.dot(kwinv[c*self.n:(c+1)*self.n, c_mark*self.n:(c_mark+1)*self.n]\
+                                                      ,kstar_c)))
 
         #MC sampling
         pistar = np.zeros((n_test, self.num_classes))
