@@ -22,7 +22,7 @@ class Multiclass_GP():
         else:
             self.K = K
 
-    def inference(self, maxiter=100, tol=1e-6, f_init = None):
+    def inference(self, maxiter=100, tol=1e-6, f_init = None, show_outputs=True):
 
         # Initialization
         self.n = int(len(self.y)/self.num_classes)
@@ -35,11 +35,12 @@ class Multiclass_GP():
         log_marginal_likelihood = -np.inf
         converged = False
         a_old = np.zeros(f.shape)
-
-        print('Beginning inference...')
+        if show_outputs:
+            print('Beginning inference...')
         while not converged and i < maxiter:
             i+=1
-            print('Iteration',i)
+            if show_outputs:
+                print('Iteration',i)
             pi_temp = np.exp(f_temp)/np.sum(np.exp(f_temp), axis = 1)[:,np.newaxis] # eq 3.34
             pi = np.reshape(pi_temp,(self.num_classes*self.n),order= 'F')
 
@@ -126,8 +127,8 @@ class Multiclass_GP():
         if not converged:
             warnings.warn('Inference has not converged. Predictions may be uncertain.', UserWarning)
             self.f = f
-
-        print('Ending inference with exit status converged:', converged)
+        if show_outputs:
+            print('Ending inference with exit status converged:', converged)
         stats = dict()
         stats['lml'] = log_marginal_likelihood
         stats['iter'] = i
@@ -135,7 +136,7 @@ class Multiclass_GP():
 
         return f_temp, stats
 
-    def predict(self, xstar, x = None, S=100):
+    def predict(self, xstar, x = None, S=100, show_outputs=True):
         if self.f is None:
             raise ValueError('Run inference before prediction')
         if self.x is None and x is None:
@@ -152,15 +153,18 @@ class Multiclass_GP():
         E = np.zeros((self.num_classes*self.n,self.n))
         n_test = len(xstar)
 
-        print('Calculating kernel between test input and training set.')
+        if show_outputs:
+            print('Calculating kernel between test input and training set.')
         if self.x is not None:
             kstar = self.kernel(self.x, xstar)
         else:
             kstar = self.kernel(x, xstar)
-        print('Calculating kernel for test input.')
+        if show_outputs:
+            print('Calculating kernel for test input.')
         kstarstar = self.kernel(xstar)
 
-        print('Calculating predictive distribution.')
+        if show_outputs:
+            print('Calculating predictive distribution.')
         for c in range(self.num_classes):
             pi_c = pi[c*self.n:(c+1)*self.n]
             K_c = self.K[c*self.n:(c+1)*self.n, :]
@@ -193,7 +197,8 @@ class Multiclass_GP():
 
         #MC sampling
         pistar = np.zeros((n_test, self.num_classes))
-        print('Beginning MC sampling.')
+        if show_outputs:
+            print('Beginning MC sampling.')
         for i in range(S):
             for n in range(n_test):
                 fstar = np.random.multivariate_normal(mu_star[n,:], Sigma[n,:,:])

@@ -10,9 +10,11 @@ from sklearn.metrics import balanced_accuracy_score
 df_collect = pickle.load(open('features/data_collect.pkl', 'rb'))
 subjects = df_collect['subject'].unique()
 
-kfold = KFold(n_splits = 34)
+kfold = KFold(n_splits = 35)
 splits = kfold.split(subjects)
-sigmas = np.arange(3, 5, step = 0.05)
+sigmas = np.arange(8, 15, step = 0.1)
+deltas = np.arange(4,6, step = 0.1)
+
 balanced_sampling = True
 min_balanced_sampling = True
 
@@ -79,15 +81,15 @@ for (train,test) in splits:
                /np.std(X_train, axis = 0)[np.newaxis,:]
     X_test_stand = (X_test-np.mean(X_train, axis = 0)[np.newaxis,:])\
                     /np.std(X_train, axis = 0)[np.newaxis,:]
-    logliks = np.zeros(len(sigmas))
-    i = 0
+    sigs = np.zeros(len(deltas))
     f_init = None
     sol = []
-
+    logliks = np.zeros(len(sigmas))
+    i = 0
     # Loop over sigmas
     for sig in sigmas:
         SE = MultiClassKernel(num_classes = 6, params=[[sig,1]],\
-                      base_kernel = SquaredExponentialKernel)
+                    base_kernel = SquaredExponentialKernel)
         K = SE(X_stand)
         MC_GP = Multiclass_GP(SE, y_train, 6, K=K)
         f, stats = MC_GP.inference(tol = 1e-6, maxiter = 20, f_init = f_init)
@@ -101,6 +103,7 @@ for (train,test) in splits:
     max_loglik = np.argmax(logliks)
     MC_GP = sol[max_loglik]
     sig = sigmas[max_loglik]
+
     out = MC_GP.predict(X_test_stand, x = X_stand)
     pred = np.argmax(out[0], axis = 1)
 
@@ -129,4 +132,4 @@ for (train,test) in splits:
     summary[j]['y_train'] = y
     j+=1
 
-pickle.dump(summary, open('outputs/training_008.pkl', 'wb'))
+pickle.dump(summary, open('outputs/training_sigdelt.pkl', 'wb'))
