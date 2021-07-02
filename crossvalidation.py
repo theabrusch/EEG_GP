@@ -3,9 +3,10 @@ import pickle
 import numpy as np
 from src.GP.gp_algorithms import Multiclass_GP
 from src.GP.kernels import SquaredExponentialKernel, MultiClassKernel
-from sklearn.model_selection import KFold
+from sklearn.model_selection import KFold, train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import balanced_accuracy_score
+from sklearn.svm import SVC
 
 df_collect = pickle.load(open('features/data_collect.pkl', 'rb'))
 subjects = df_collect['subject'].unique()
@@ -13,6 +14,7 @@ subjects = df_collect['subject'].unique()
 kfold = KFold(n_splits = 35)
 splits = kfold.split(subjects)
 sigmas = np.arange(3,5, step = 0.05)
+deltas = np.arange(3,9, step = 0.5)
 
 balanced_sampling = True
 min_balanced_sampling = True
@@ -79,11 +81,31 @@ for (train,test) in splits:
                /np.std(X_train, axis = 0)[np.newaxis,:]
     X_test_stand = (X_test-np.mean(X_train, axis = 0)[np.newaxis,:])\
                     /np.std(X_train, axis = 0)[np.newaxis,:]
+
+    # Get training set for SVM
+    train_SVM, val_SVM = train_test_split(train_subjects, test_size = 0.05)
+    df_train_SVM = df_train[np.isin(df_train['subject'], \
+                                    train_SVM)].reset_index()
+    df_val_SVM = df_train[np.isin(df_train['subject'], \
+                                    val_SVM)].reset_index()
+    X_SVM = df_train_SVM[df_collect.columns[:-2]].values
+    y_SVM = df_train_SVM['label'].values
+    X_SVM_v = df_val_SVM[df_collect.columns[:-2]].values
+    y_val_SVM = df_val_SVM['label'].values
+
+    X_train_SVM = (X_SVM - np.mean(X_SVM, axis = 0)[np.newaxis, :])\
+                   / np.std(X_SVM, axis = 0)[np.newaxis, :]
+    X_val_SVM = (X_SVM_v - np.mean(X_SVM, axis = 0)[np.newaxis, :])\
+                   / np.std(X_SVM, axis = 0)[np.newaxis, :]
+
     f_init = None
     sol = []
-    logliks = np.zeros(len(sigmas))
-    i = 0
+    SVM_sol = []
+    k=0
     # Loop over sigmas
+    logliks = np.zeros(len(sigmas))
+    acc_SVM = np.zeros(len(sigmas))
+    i = 0
     for sig in sigmas:
         SE = MultiClassKernel(num_classes = 6, params=[[sig,1]],\
                     base_kernel = SquaredExponentialKernel)
@@ -92,8 +114,13 @@ for (train,test) in splits:
         f, stats = MC_GP.inference(tol = 1e-6, maxiter = 20, f_init = f_init)
         # initialize f at previous solution
         f_init = MC_GP.f
+        SVM = SVC(kernel = SquaredExponentialKernel(l = sig), class_weight='balanced')
+        SVM = SVM.fit(X_train_SVM, y_SVM)
+        SVM_pred = SVM.predict(X_val_SVM)
+        acc_SVM[i] = balanced_accuracy_score(y_val_SVM, SVM_pred)
         logliks[i] = stats['lml']
         sol.append(MC_GP)
+        SVM_sol.append(SVM)
         i+=1
 
     #Get test results based on the kernel with maximum likelihood 
@@ -103,6 +130,11 @@ for (train,test) in splits:
 
     out = MC_GP.predict(X_test_stand, x = X_stand, S=500)
     pred = np.argmax(out[0], axis = 1)
+
+    # Get test results for SVM
+    maxacc = np.argmax(acc_SVM)
+    SVM = SVM_sol[maxacc]
+    svm_pred = SVM.predict(X_test_stand)
 
     #Fit with Logistic regression
     X_stand = (X-np.mean(X, axis = 0)[np.newaxis,:])\
@@ -123,6 +155,8 @@ for (train,test) in splits:
     summary[j]['accGP'] = balanced_accuracy_score(y_test, pred)
     summary[j]['dist'] = out[1]
     summary[j]['predLR'] = out_LR
+    summary[j]['accSVM'] = balanced_accuracy_score(y_test, svm_pred)
+    summary[j]['predSVM'] = svm_pred
     summary[j]['accLR'] = balanced_accuracy_score(y_test, out_LR)
     summary[j]['logliks'] = logliks
     summary[j]['likLR'] = lik_LR

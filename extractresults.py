@@ -22,7 +22,7 @@ plt.ylim([0, 1])
 ax.tick_params(labelsize='x-large')
 #plt.show()
 
-summary = pickle.load(open('outputs/training_bal2.pkl', 'rb'))
+summary = pickle.load(open('outputs/training_bal2_new.pkl', 'rb'))
 
 accuracies_GP = np.zeros(len(summary.keys()))
 accuracies_LR = np.zeros(len(summary.keys()))
@@ -78,6 +78,12 @@ for i in range(len(summary.keys())):
     top2accGP[i] = balanced_accuracy_score(summary[i]['y_test'], top2predGP)
     top2accLR[i] = balanced_accuracy_score(summary[i]['y_test'], top2predLR)
 
+plt.plot(np.arange(3,5, 0.05), logliks.T)
+plt.xlabel('Length scale', fontsize=16)
+plt.ylabel('Log posterior likelihood', fontsize=16)
+
+plt.show()
+
 wrongclassGP = np.where(ytest!=predGP)
 wrongclassLR = np.where(ytest!=predLR)
 correctclassGP = np.where(ytest==predGP)
@@ -117,21 +123,19 @@ for i in range(len(likdistGP)):
         top2predLR[i] = ytest[i]
     else:
         top2predLR[i] = tempLR[0]
-
-
-balanced_accuracy_score(ytest, top2predLR)
+    
 
 plt.hist(mindistGP[wrongclassGP], bins=20)
-plt.title('Distance, Wrong class, GP')
+plt.title('Distance, Wrong class, GP', fontsize = 20)
 plt.show()
 plt.hist(mindistGP[correctclassGP], bins=20)
-plt.title('Distance, Correct class, GP')
+plt.title('Distance, Correct class, GP', fontsize = 20)
 plt.show()
 plt.hist(mindistLR[wrongclassLR], bins =20)
-plt.title('Distance, Wrong class, LR')
+plt.title('Distance, Wrong class, LR', fontsize = 20)
 plt.show()
 plt.hist(mindistLR[correctclassLR], bins =20)
-plt.title('Distance, Correct class, LR')
+plt.title('Distance, Correct class, LR', fontsize = 20)
 plt.show()
 
 entGP = entropy(likGP, axis = 1)
@@ -143,23 +147,23 @@ correctentGP = entGP[correctclassGP]
 correctentLR = entLR[correctclassLR]
 
 plt.hist(wrongentGP, bins = 20)
-plt.title('Entropy, wrong class, GP')
+plt.title('Entropy, wrong class, GP', fontsize = 20)
 plt.show()
 
 plt.hist(correctentGP, bins = 20)
-plt.title('Entropy, correct class, GP')
+plt.title('Entropy, correct class, GP', fontsize = 20)
 plt.show()
 
 plt.hist(wrongentLR, bins = 20)
-plt.title('Entropy, wrong class, LR')
+plt.title('Entropy, wrong class, LR', fontsize = 20)
 plt.show()
 
 plt.hist(correctentLR, bins = 20)
-plt.title('Entropy, correct class, LR')
+plt.title('Entropy, correct class, LR', fontsize = 20)
 plt.show()
 
-wrongdet = covdet[wrongclassGP]
-correctdet = covdet[correctclassGP]
+wrongdet = np.log(covdet[wrongclassGP])
+correctdet = np.log(covdet[correctclassGP])
 plt.hist(wrongdet, bins = 20)
 plt.show()
 plt.hist(correctdet, bins = 20)
