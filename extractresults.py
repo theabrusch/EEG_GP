@@ -45,6 +45,7 @@ for i in range(len(summary.keys())):
         predGP = np.argmax(likGP, axis = 1)
         predLR = np.argmax(likLR, axis = 1)
         cov = summary[i]['dist']['Cov']
+        predvar = np.array([cov[k,predGP[k], predGP[k]] for k in range(cov.shape[0])])
         covdet = np.array([det(cov[k,:,:]) for k in range(cov.shape[0])])
     else:
         likGPsubj = summary[i]['likGP']
@@ -58,6 +59,9 @@ for i in range(len(summary.keys())):
         covdet = np.append(covdet, \
                            np.array([det(cov[k,:,:]) for k in range(cov.shape[0])]),\
                            axis = 0)
+        predvar = np.append(predvar, \
+                            np.array([cov[k,predGP[k], predGP[k]] for k in range(cov.shape[0])]), \
+                            axis = 0)
     top2predGP = np.zeros(len(likLRsubj))
     top2predLR = np.zeros(len(likLRsubj))
     for j in range(len(likLRsubj)):
@@ -78,7 +82,9 @@ for i in range(len(summary.keys())):
     top2accGP[i] = balanced_accuracy_score(summary[i]['y_test'], top2predGP)
     top2accLR[i] = balanced_accuracy_score(summary[i]['y_test'], top2predLR)
 
+plt.figure(figsize = (10,5))
 plt.plot(np.arange(3,5, 0.05), logliks.T)
+plt.xticks(fontsize = 14)
 plt.xlabel('Length scale', fontsize=16)
 plt.ylabel('Log posterior likelihood', fontsize=16)
 
@@ -88,6 +94,12 @@ wrongclassGP = np.where(ytest!=predGP)
 wrongclassLR = np.where(ytest!=predLR)
 correctclassGP = np.where(ytest==predGP)
 correctclassLR = np.where(ytest==predLR)
+
+plt.hist(predvar[wrongclassGP], bins = 20)
+plt.show()
+
+plt.hist(predvar[correctclassGP], bins = 20)
+plt.show()
 
 likdistGP = np.max(likGP,axis=1)[:,np.newaxis]-likGP
 likdistLR = np.max(likLR,axis=1)[:,np.newaxis]-likLR

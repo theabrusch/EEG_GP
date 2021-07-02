@@ -48,15 +48,16 @@ for (train,test) in splits:
         if min_balanced_sampling:
             samples = mincount
         else:
-            samples = int(mincount*1.5)
+            samples = [int(mincount*3), int(mincount*2), int(mincount*2), int(mincount*3), \
+                       int(mincount*2), int(mincount*3)]
             
         temp_count = 0
         for lab in val:
             lab_idx = np.where(y==lab)[0]
-            if len(lab_idx) < samples:
-                samp_lab = np.random.choice(lab_idx, samples, replace = True)
+            if len(lab_idx) < samples[temp_count]:
+                samp_lab = np.random.choice(lab_idx, samples[temp_count], replace = True)
             else:
-                samp_lab = np.random.choice(lab_idx, samples, replace = False)
+                samp_lab = np.random.choice(lab_idx, samples[temp_count], replace = False)
 
             if temp_count==0:
                 X_train = X[samp_lab,:]
@@ -114,10 +115,10 @@ for (train,test) in splits:
         f, stats = MC_GP.inference(tol = 1e-6, maxiter = 20, f_init = f_init)
         # initialize f at previous solution
         f_init = MC_GP.f
-        SVM = SVC(kernel = SquaredExponentialKernel(l = sig), class_weight='balanced')
-        SVM = SVM.fit(X_train_SVM, y_SVM)
-        SVM_pred = SVM.predict(X_val_SVM)
-        acc_SVM[i] = balanced_accuracy_score(y_val_SVM, SVM_pred)
+        #SVM = SVC(kernel = SquaredExponentialKernel(l = sig), class_weight='balanced')
+        #SVM = SVM.fit(X_train_SVM, y_SVM)
+        #SVM_pred = SVM.predict(X_val_SVM)
+        #acc_SVM[i] = balanced_accuracy_score(y_val_SVM, SVM_pred)
         logliks[i] = stats['lml']
         sol.append(MC_GP)
         SVM_sol.append(SVM)
@@ -132,9 +133,9 @@ for (train,test) in splits:
     pred = np.argmax(out[0], axis = 1)
 
     # Get test results for SVM
-    maxacc = np.argmax(acc_SVM)
-    SVM = SVM_sol[maxacc]
-    svm_pred = SVM.predict(X_test_stand)
+    #maxacc = np.argmax(acc_SVM)
+    #SVM = SVM_sol[maxacc]
+    #svm_pred = SVM.predict(X_test_stand)
 
     #Fit with Logistic regression
     X_stand = (X-np.mean(X, axis = 0)[np.newaxis,:])\
@@ -155,8 +156,8 @@ for (train,test) in splits:
     summary[j]['accGP'] = balanced_accuracy_score(y_test, pred)
     summary[j]['dist'] = out[1]
     summary[j]['predLR'] = out_LR
-    summary[j]['accSVM'] = balanced_accuracy_score(y_test, svm_pred)
-    summary[j]['predSVM'] = svm_pred
+    #summary[j]['accSVM'] = balanced_accuracy_score(y_test, svm_pred)
+    #summary[j]['predSVM'] = svm_pred
     summary[j]['accLR'] = balanced_accuracy_score(y_test, out_LR)
     summary[j]['logliks'] = logliks
     summary[j]['likLR'] = lik_LR
