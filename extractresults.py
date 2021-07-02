@@ -22,7 +22,7 @@ plt.ylim([0, 1])
 ax.tick_params(labelsize='x-large')
 #plt.show()
 
-summary = pickle.load(open('outputs/training_bal2_new.pkl', 'rb'))
+summary = pickle.load(open('outputs/training_bal_SVM.pkl', 'rb'))
 
 accuracies_GP = np.zeros(len(summary.keys()))
 accuracies_LR = np.zeros(len(summary.keys()))
@@ -136,6 +136,25 @@ for i in range(len(likdistGP)):
     else:
         top2predLR[i] = tempLR[0]
     
+thresholds = np.arange(0,0.6,0.01)
+threshaccGP = np.zeros(len(thresholds))
+percnotclassGP = np.zeros(len(thresholds))
+threshaccLR = np.zeros(len(thresholds))
+percnotclassLR = np.zeros(len(thresholds))
+
+for (i,thresh) in enumerate(thresholds):
+    tempGP = predGP[mindistGP>thresh]
+    temptestGP = ytest[mindistGP>thresh]
+    threshaccGP[i] = balanced_accuracy_score(temptestGP, tempGP)
+    percnotclassGP[i] = len(tempGP)/len(predGP)
+    tempLR = predLR[mindistLR>thresh]
+    temptestLR = ytest[mindistLR>thresh]
+    threshaccLR[i] = balanced_accuracy_score(temptestLR, tempLR)
+    percnotclassLR[i] = len(tempLR)/len(predLR)
+
+plt.plot(thresholds, threshaccGP)
+plt.plot(thresholds, percnotclassGP)
+plt.show()
 
 plt.hist(mindistGP[wrongclassGP], bins=20)
 plt.title('Distance, Wrong class, GP', fontsize = 20)
@@ -181,9 +200,9 @@ plt.show()
 plt.hist(correctdet, bins = 20)
 plt.show()
 
-confGP = confusion_matrix(ytest, predGP, normalize='true')
-confLR = confusion_matrix(ytest, predLR, normalize='true')
+confGP = confusion_matrix(ytest[mindistGP>0.1], predGP[mindistGP>0.1], normalize='true')
+confLR = confusion_matrix(ytest[mindistLR>0.2], predLR[mindistLR>0.2], normalize='true')
 
-disp = ConfusionMatrixDisplay(confGP, display_labels = labs)
+disp = ConfusionMatrixDisplay(confLR, display_labels = labs)
 disp.plot(cmap = 'Greys')
 plt.show()

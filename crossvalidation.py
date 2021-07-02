@@ -13,11 +13,11 @@ subjects = df_collect['subject'].unique()
 
 kfold = KFold(n_splits = 35)
 splits = kfold.split(subjects)
-sigmas = np.arange(3,5, step = 0.05)
+sigmas = np.arange(3,7, step = 0.5)
 deltas = np.arange(3,9, step = 0.5)
 
 balanced_sampling = True
-min_balanced_sampling = True
+min_balanced_sampling = False
 
 summary = dict()
 
@@ -115,10 +115,10 @@ for (train,test) in splits:
         f, stats = MC_GP.inference(tol = 1e-6, maxiter = 20, f_init = f_init)
         # initialize f at previous solution
         f_init = MC_GP.f
-        #SVM = SVC(kernel = SquaredExponentialKernel(l = sig), class_weight='balanced')
-        #SVM = SVM.fit(X_train_SVM, y_SVM)
-        #SVM_pred = SVM.predict(X_val_SVM)
-        #acc_SVM[i] = balanced_accuracy_score(y_val_SVM, SVM_pred)
+        SVM = SVC(kernel = SquaredExponentialKernel(l = sig), class_weight='balanced')
+        SVM = SVM.fit(X_train_SVM, y_SVM)
+        SVM_pred = SVM.predict(X_val_SVM)
+        acc_SVM[i] = balanced_accuracy_score(y_val_SVM, SVM_pred)
         logliks[i] = stats['lml']
         sol.append(MC_GP)
         SVM_sol.append(SVM)
@@ -132,11 +132,6 @@ for (train,test) in splits:
     out = MC_GP.predict(X_test_stand, x = X_stand, S=500)
     pred = np.argmax(out[0], axis = 1)
 
-    # Get test results for SVM
-    #maxacc = np.argmax(acc_SVM)
-    #SVM = SVM_sol[maxacc]
-    #svm_pred = SVM.predict(X_test_stand)
-
     #Fit with Logistic regression
     X_stand = (X-np.mean(X, axis = 0)[np.newaxis,:])\
                /np.std(X, axis = 0)[np.newaxis,:]
@@ -146,6 +141,12 @@ for (train,test) in splits:
     LR.fit(X_stand, y)
     out_LR = LR.predict(X_test_stand)
     lik_LR = LR.predict_proba(X_test_stand)
+
+    # Get test results for SVM
+    maxacc = np.argmax(acc_SVM)
+    SVM = SVC(kernel = SquaredExponentialKernel(l = sigmas[maxacc]), class_weight='balanced')
+    SVM = SVM.fit(X_stand, y)
+    svm_pred = SVM.predict(X_test_stand)
 
     summary[j] = dict()
     summary[j]['test_split'] = test 
@@ -161,7 +162,7 @@ for (train,test) in splits:
     summary[j]['accLR'] = balanced_accuracy_score(y_test, out_LR)
     summary[j]['logliks'] = logliks
     summary[j]['likLR'] = lik_LR
-    summary[j]['y_train'] = y
+    summary[j]['y_train'] = y_temp
     j+=1
 
 pickle.dump(summary, open('outputs/training_sigdelt.pkl', 'wb'))
